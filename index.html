@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neon Tetris</title>
+<style>
+:root{color-scheme:dark;--cyan:#00f5ff;--pink:#ff38c7;--lime:#39ff88;--bg:#020617}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at top,#172554,#020617 60%);font-family:Arial,sans-serif;color:white;padding:18px;overflow-x:hidden}
+.game{text-align:center}.title{font-size:clamp(34px,7vw,58px);font-weight:900;letter-spacing:.17em;color:#9ff8ff;text-shadow:0 0 14px var(--cyan),0 0 30px #a855f7;margin:0 0 16px}.layout{display:flex;gap:18px;align-items:flex-start;justify-content:center}.board-wrap{position:relative;border:1px solid #22d3ee;border-radius:14px;overflow:hidden;box-shadow:0 0 32px rgba(8,145,178,.75);line-height:0}canvas{display:block;max-width:64vw;height:auto}.overlay{position:absolute;inset:0;background:rgba(2,6,23,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2}.status{font-size:28px;font-weight:900;color:#f0abfc;text-shadow:0 0 14px #d946ef}.start{margin-top:18px;padding:12px 26px;border:0;border-radius:12px;background:#67e8f9;color:#07111f;font-weight:900;font-size:16px;box-shadow:0 0 22px var(--cyan);cursor:pointer}.side{width:145px;display:grid;gap:12px}.panel{padding:13px;border-radius:16px;border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.07);font-family:monospace;line-height:1.5}.value{font-size:22px;font-weight:900}.score{color:#bef264}.lines{color:#f0abfc}.preview{border-color:rgba(192,132,252,.45);background:rgba(168,85,247,.09)}.preview-title{font-weight:900;color:#ddd6fe;letter-spacing:.05em}.shape{height:78px;display:flex;align-items:center;justify-content:center}.mini-grid{display:grid;gap:4px}.mini-cell{width:16px;height:16px;border-radius:2px}.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}.btn{padding:10px 15px;border:1px solid rgba(34,211,238,.5);border-radius:12px;background:rgba(34,211,238,.09);color:white;font-weight:800;cursor:pointer;touch-action:manipulation}.btn:hover{background:rgba(34,211,238,.18)}.wide{border-color:rgba(232,121,249,.5);background:rgba(217,70,239,.09)}.help{font-size:12px;color:#94a3b8;margin-top:12px;line-height:1.5}@media(max-width:560px){body{padding:8px}.layout{gap:8px}.side{width:104px}.panel{padding:8px;font-size:12px}.shape{height:60px}.mini-cell{width:12px;height:12px}canvas{max-width:70vw}.title{margin-bottom:10px}.controls{max-width:360px;margin-inline:auto}}
+.key-guide{margin:16px auto 0;max-width:430px;padding:14px;border:1px solid rgba(34,211,238,.22);border-radius:16px;background:rgba(2,6,23,.5)}.key-guide h2{font-size:12px;letter-spacing:.22em;color:#67e8f9;margin:0 0 10px}.keys{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;text-align:left}.keys div{display:flex;align-items:center;gap:8px;color:#cbd5e1;font-size:12px}.keys kbd{min-width:46px;text-align:center;padding:5px 7px;border:1px solid rgba(103,232,249,.42);border-bottom-width:3px;border-radius:7px;background:#0f172a;color:#e0f2fe;font:700 11px monospace;box-shadow:0 0 8px rgba(34,211,238,.12)}@media(max-width:560px){.keys{grid-template-columns:1fr}.key-guide{max-width:290px}}
+</style>
+</head>
+<body>
+<main class="game">
+<h1 class="title">NEON TETRIS</h1>
+<div class="layout">
+  <div class="board-wrap">
+    <canvas id="board" width="260" height="520"></canvas>
+    <div class="overlay" id="overlay"><div class="status" id="status">READY</div><button class="start" id="start">START</button></div>
+  </div>
+  <aside class="side">
+    <div class="panel">SCORE<br><span class="value score" id="score">0</span><br>LINES<br><span class="value lines" id="lines">0</span></div>
+    <div class="panel preview"><div class="preview-title">NEXT</div><div class="shape" id="next"></div></div>
+    <button class="panel preview" id="holdPanel"><div class="preview-title">RESERVED</div><div class="shape" id="hold">EMPTY</div></button>
+  </aside>
+</div>
+<div class="controls">
+<button class="btn" data-act="left">◀</button><button class="btn" data-act="rotate">↻</button><button class="btn" data-act="down">▼</button><button class="btn" data-act="right">▶</button>
+</div>
+<div class="controls"><button class="btn wide" data-act="hold">RESERVE</button><button class="btn wide" data-act="drop">HARD DROP</button></div>
+<section class="key-guide">
+  <h2>CONTROLS</h2>
+  <div class="keys">
+    <div><kbd>←</kbd><span>Move Left</span></div>
+    <div><kbd>→</kbd><span>Move Right</span></div>
+    <div><kbd>↑</kbd><span>Rotate Clockwise</span></div>
+    <div><kbd>↓</kbd><span>Soft Drop</span></div>
+    <div><kbd>SPACE</kbd><span>Hard Drop</span></div>
+    <div><kbd>C</kbd><span>Reserve / Swap Block</span></div>
+    <div><kbd>A</kbd><span>Move Left</span></div>
+    <div><kbd>D</kbd><span>Move Right</span></div>
+    <div><kbd>W</kbd><span>Rotate Clockwise</span></div>
+    <div><kbd>S</kbd><span>Soft Drop</span></div>
+  </div>
+</section>
+</main>
+<script>
+(()=>{
+const W=10,H=20,S=26,C=['#000','#00f5ff','#ffd500','#a855f7','#39ff88','#ff3864','#3b82f6','#ff8a00'];
+const P=[{c:1,m:[[1,1,1,1]]},{c:2,m:[[1,1],[1,1]]},{c:3,m:[[0,1,0],[1,1,1]]},{c:4,m:[[0,1,1],[1,1,0]]},{c:5,m:[[1,1,0],[0,1,1]]},{c:6,m:[[1,0,0],[1,1,1]]},{c:7,m:[[0,0,1],[1,1,1]]}];
+const canvas=document.getElementById('board'),ctx=canvas.getContext('2d'),overlay=document.getElementById('overlay'),status=document.getElementById('status'),start=document.getElementById('start'),scoreEl=document.getElementById('score'),linesEl=document.getElementById('lines');
+let board,piece,next,hold,playing=false,over=false,canHold=true,score=0,lines=0,timer;
+const blank=()=>Array.from({length:H},()=>Array(W).fill(0));
+const random=()=>{let p=P[Math.floor(Math.random()*P.length)];return{c:p.c,m:p.m.map(r=>[...r]),x:Math.floor((W-p.m[0].length)/2),y:0}};
+const rotate=m=>m[0].map((_,i)=>m.map(r=>r[i]).reverse());
+const valid=p=>p.m.every((r,dy)=>r.every((v,dx)=>!v||(p.x+dx>=0&&p.x+dx<W&&p.y+dy>=0&&p.y+dy<H&&!board[p.y+dy][p.x+dx])));
+function drawCell(cx,cy,col){ctx.save();ctx.shadowBlur=10;ctx.shadowColor=col;ctx.fillStyle=col;ctx.fillRect(cx*S+3,cy*S+3,S-6,S-6);ctx.restore()}
+function ghost(){let g={...piece,m:piece.m.map(r=>[...r])};while(valid({...g,y:g.y+1}))g.y++;return g}
+function draw(){ctx.fillStyle='#050816';ctx.fillRect(0,0,W*S,H*S);for(let y=0;y<H;y++)for(let x=0;x<W;x++){ctx.strokeStyle='rgba(0,245,255,.09)';ctx.strokeRect(x*S,y*S,S,S);if(board[y][x])drawCell(x,y,C[board[y][x]])}if(piece){const g=ghost();g.m.forEach((r,y)=>r.forEach((v,x)=>{if(v){ctx.save();ctx.strokeStyle=C[g.c];ctx.globalAlpha=.45;ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect((g.x+x)*S+4,(g.y+y)*S+4,S-8,S-8);ctx.restore()}}));piece.m.forEach((r,y)=>r.forEach((v,x)=>v&&drawCell(piece.x+x,piece.y+y,C[piece.c])))}renderPreview('next',next);renderPreview('hold',hold)}
+function renderPreview(id,p){const host=document.getElementById(id);host.innerHTML='';if(!p){host.textContent='EMPTY';host.style.color='#64748b';host.style.fontSize='12px';return}const g=document.createElement('div');g.className='mini-grid';g.style.gridTemplateColumns=`repeat(${p.m[0].length},16px)`;p.m.flat().forEach(v=>{const d=document.createElement('i');d.className='mini-cell';if(v){d.style.background=C[p.c];d.style.boxShadow=`0 0 10px ${C[p.c]}`}g.appendChild(d)});host.appendChild(g)}
+function update(){scoreEl.textContent=score;linesEl.textContent=lines;draw()}
+function spawn(){piece={...next,m:next.m.map(r=>[...r]),x:Math.floor((W-next.m[0].length)/2),y:0};next=random();canHold=true;if(!valid(piece)){playing=false;over=true;clearInterval(timer);status.textContent='GAME OVER';start.textContent='RESTART';overlay.style.display='flex'}update()}
+function lock(){piece.m.forEach((r,y)=>r.forEach((v,x)=>{if(v&&board[piece.y+y])board[piece.y+y][piece.x+x]=piece.c}));let n=0;board=board.filter(r=>r.every(Boolean)?(n++,false):true);while(board.length<H)board.unshift(Array(W).fill(0));if(n){score+=[0,100,300,500,800][n];lines+=n;restartTimer()}spawn()}
+function down(){if(!playing)return;const p={...piece,y:piece.y+1};valid(p)?piece=p:lock();update()}
+function move(dx){if(!playing)return;const p={...piece,x:piece.x+dx};if(valid(p))piece=p;update()}
+function turn(){if(!playing)return;const p={...piece,m:rotate(piece.m)};if(valid(p))piece=p;update()}
+function drop(){if(!playing)return;while(valid({...piece,y:piece.y+1}))piece.y++;lock();update()}
+function reserve(){if(!playing||!canHold)return;const cur={c:piece.c,m:piece.m.map(r=>[...r])};if(hold){const h=hold;piece={c:h.c,m:h.m.map(r=>[...r]),x:Math.floor((W-h.m[0].length)/2),y:0}}else{piece={...next,m:next.m.map(r=>[...r]),x:Math.floor((W-next.m[0].length)/2),y:0};next=random()}hold=cur;canHold=false;update()}
+function restartTimer(){clearInterval(timer);timer=setInterval(down,Math.max(260,850-lines*9))}
+function reset(){board=blank();score=0;lines=0;hold=null;next=random();piece=random();playing=true;over=false;canHold=true;overlay.style.display='none';restartTimer();update()}
+function action(a){({left:()=>move(-1),right:()=>move(1),down,rotate:turn,drop,hold:reserve}[a]||(()=>{}))()}
+start.onclick=reset;document.getElementById('holdPanel').onclick=reserve;document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>action(b.dataset.act));
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' ','a','d','s','w','c'].includes(e.key)||['a','d','s','w','c'].includes(k))e.preventDefault();if(e.key==='ArrowLeft'||k==='a')move(-1);if(e.key==='ArrowRight'||k==='d')move(1);if(e.key==='ArrowDown'||k==='s')down();if(e.key==='ArrowUp'||k==='w')turn();if(e.key===' ')drop();if(k==='c')reserve()});
+board=blank();piece=random();next=random();update();
+})();
+</script>
+</body>
+</html>
